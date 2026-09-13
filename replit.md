@@ -1,6 +1,6 @@
-# [Project name]
+# QA Machine Board
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Shared live QA tracking for CNC machines moving through six readiness checks before dispatch.
 
 ## Run & Operate
 
@@ -22,23 +22,30 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- `artifacts/qa-machine-board/` — responsive React board UI and live polling client
+- `artifacts/api-server/src/routes/machines.ts` — machine, process, bulk update, summary, and activity routes
+- `lib/api-spec/openapi.yaml` — source of truth for the typed machine API contract
+- `lib/db/src/schema/machines.ts` — PostgreSQL tables and process state types
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- The first release is a responsive web board so QA members can use the same link on phones and desktop.
+- Machine readiness is derived from the six process states: zero done is Not started, partial is In progress, and all six done is Completed / Ready to dispatch.
+- The board uses short polling with generated React Query hooks so all open sessions converge on the shared PostgreSQL state without a separate realtime service.
+- Each process update stores the operator name and timestamp, and also creates an activity entry for traceability.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+QA members, supervisors, and department heads can add or edit machines, mark Reliability, Laser, LKC, FUC, CT, and TAG individually, select several machines for bulk updates, and see which machines are ready for dispatch.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- The user prefers a practical app focused on the QA department workflow before dispatch.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- A person's name is required before process or bulk actions can be submitted; it is stored in the browser for the next visit.
+- Regenerate API hooks with `pnpm --filter @workspace/api-spec run codegen` after changing `lib/api-spec/openapi.yaml`.
 
 ## Pointers
 

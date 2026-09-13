@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: machines
+    description: QA machine readiness operations
 paths:
   /healthz:
     get:
@@ -24,7 +26,176 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /machines:
+    get:
+      operationId: listMachines
+      tags: [machines]
+      summary: List all machines
+      description: Returns all CNC machines tracked by the QA board.
+      responses:
+        "200":
+          description: Machine list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Machine"
+    post:
+      operationId: createMachine
+      tags: [machines]
+      summary: Add a machine
+      description: Adds a CNC machine to the QA board.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MachineInput"
+      responses:
+        "201":
+          description: Machine created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Machine"
+        "400":
+          description: Invalid machine data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+  /machines/{machineId}:
+    patch:
+      operationId: updateMachine
+      tags: [machines]
+      summary: Update a machine
+      description: Updates the bed number or machine name.
+      parameters:
+        - $ref: "#/components/parameters/MachineId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MachineUpdate"
+      responses:
+        "200":
+          description: Machine updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Machine"
+        "404":
+          description: Machine not found
+  /machines/{machineId}/processes/{process}:
+    patch:
+      operationId: updateMachineProcess
+      tags: [machines]
+      summary: Mark one machine process
+      description: Marks or unmarks one QA process for a machine.
+      parameters:
+        - $ref: "#/components/parameters/MachineId"
+        - $ref: "#/components/parameters/Process"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProcessUpdate"
+      responses:
+        "200":
+          description: Machine process updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Machine"
+        "404":
+          description: Machine not found
+  /machines/bulk-process:
+    post:
+      operationId: bulkUpdateProcess
+      tags: [machines]
+      summary: Update one process across machines
+      description: Marks or unmarks one QA process for several machines.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkProcessInput"
+      responses:
+        "200":
+          description: Updated machines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Machine"
+  /machines/bulk-complete:
+    post:
+      operationId: bulkCompleteMachines
+      tags: [machines]
+      summary: Complete all QA processes across machines
+      description: Marks all six QA processes complete for several machines.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkCompleteInput"
+      responses:
+        "200":
+          description: Updated machines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Machine"
+  /summary:
+    get:
+      operationId: getMachineSummary
+      tags: [machines]
+      summary: Get board summary
+      description: Returns counts and process completion totals for the dashboard.
+      responses:
+        "200":
+          description: Board summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MachineSummary"
+  /activity:
+    get:
+      operationId: listMachineActivity
+      tags: [machines]
+      summary: List recent activity
+      description: Returns the latest process updates.
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Activity"
 components:
+  parameters:
+    MachineId:
+      name: machineId
+      in: path
+      required: true
+      schema:
+        type: integer
+    Process:
+      name: process
+      in: path
+      required: true
+      schema:
+        $ref: "#/components/schemas/Process"
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +204,160 @@ components:
           type: string
       required:
         - status
+    Process:
+      type: string
+      enum: [reliability, laser, lkc, fuc, ct, tag]
+    ProcessState:
+      type: object
+      required: [done]
+      properties:
+        done:
+          type: boolean
+        completedBy:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+    Machine:
+      type: object
+      required: [id, bedNumber, name, status, processes, createdAt, updatedAt]
+      properties:
+        id:
+          type: integer
+        bedNumber:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [not_started, in_progress, completed]
+        processes:
+          type: object
+          required: [reliability, laser, lkc, fuc, ct, tag]
+          properties:
+            reliability:
+              $ref: "#/components/schemas/ProcessState"
+            laser:
+              $ref: "#/components/schemas/ProcessState"
+            lkc:
+              $ref: "#/components/schemas/ProcessState"
+            fuc:
+              $ref: "#/components/schemas/ProcessState"
+            ct:
+              $ref: "#/components/schemas/ProcessState"
+            tag:
+              $ref: "#/components/schemas/ProcessState"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+    MachineInput:
+      type: object
+      required: [bedNumber, name]
+      properties:
+        bedNumber:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+    MachineUpdate:
+      type: object
+      properties:
+        bedNumber:
+          type: string
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+    ProcessUpdate:
+      type: object
+      required: [done, updatedBy]
+      properties:
+        done:
+          type: boolean
+        updatedBy:
+          type: string
+          minLength: 1
+    BulkProcessInput:
+      type: object
+      required: [machineIds, process, done, updatedBy]
+      properties:
+        machineIds:
+          type: array
+          minItems: 1
+          items:
+            type: integer
+        process:
+          $ref: "#/components/schemas/Process"
+        done:
+          type: boolean
+        updatedBy:
+          type: string
+          minLength: 1
+    BulkCompleteInput:
+      type: object
+      required: [machineIds, updatedBy]
+      properties:
+        machineIds:
+          type: array
+          minItems: 1
+          items:
+            type: integer
+        updatedBy:
+          type: string
+          minLength: 1
+    MachineSummary:
+      type: object
+      required: [total, notStarted, inProgress, completed, processTotals]
+      properties:
+        total:
+          type: integer
+        notStarted:
+          type: integer
+        inProgress:
+          type: integer
+        completed:
+          type: integer
+        processTotals:
+          type: object
+          required: [reliability, laser, lkc, fuc, ct, tag]
+          properties:
+            reliability:
+              type: integer
+            laser:
+              type: integer
+            lkc:
+              type: integer
+            fuc:
+              type: integer
+            ct:
+              type: integer
+            tag:
+              type: integer
+    Activity:
+      type: object
+      required: [id, machineId, bedNumber, machineName, process, completed, updatedBy, updatedAt]
+      properties:
+        id:
+          type: integer
+        machineId:
+          type: integer
+        bedNumber:
+          type: string
+        machineName:
+          type: string
+        process:
+          $ref: "#/components/schemas/Process"
+        completed:
+          type: boolean
+        updatedBy:
+          type: string
+        updatedAt:
+          type: string
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
 

@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "QA Machine Board"
+description = "A live shared QA board for tracking CNC machine readiness across Reliability, Laser, LKC, FUC, CT, and TAG before dispatch."
+version = "1.0.0"
+id = "artifacts/qa-machine-board"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22973
+
+[services.development]
+run = "pnpm --filter @workspace/qa-machine-board run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/qa-machine-board", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/qa-machine-board/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22973"
+BASE_PATH = "/"

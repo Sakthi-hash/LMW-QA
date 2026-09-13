@@ -1,0 +1,1 @@
+- [Generated client DOM types](api-client-dom-iterable.md) — keep `dom.iterable` enabled for `Headers.entries()` in generated API clients.
