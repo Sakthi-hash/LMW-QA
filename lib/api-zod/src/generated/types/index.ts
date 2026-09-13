@@ -12,6 +12,7 @@ export * from './bulkProcessInput';
 export * from './errorResponse';
 export * from './healthStatus';
 export * from './machine';
+export * from './machineDeleteResult';
 export * from './machineInput';
 export * from './machineProcesses';
 export * from './machineStatus';

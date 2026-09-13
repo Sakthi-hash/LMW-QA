@@ -186,6 +186,24 @@ router.patch("/machines/:machineId", async (req, res) => {
   res.json(formatMachine(updated));
 });
 
+router.delete("/machines/:machineId", async (req, res) => {
+  const { machineId } = UpdateMachineParams.parse(req.params);
+  const machine = await getMachine(machineId);
+  if (!machine) {
+    res.status(404).json({ error: "Machine not found" });
+    return;
+  }
+  if (machine.status !== "completed") {
+    res.status(409).json({
+      error: "Only ready-to-dispatch machines can be deleted",
+    });
+    return;
+  }
+
+  await db.delete(machinesTable).where(eq(machinesTable.id, machineId));
+  res.json({ deletedId: machineId });
+});
+
 router.patch("/machines/:machineId/processes/:process", async (req, res) => {
   const { machineId, process } = UpdateMachineProcessParams.parse(req.params);
   const input = UpdateMachineProcessBody.parse(req.body);
@@ -219,19 +237,21 @@ router.post("/machines/bulk-process", async (req, res) => {
 
 router.post("/machines/bulk-complete", async (req, res) => {
   const input = BulkCompleteMachinesBody.parse(req.body);
-  const updated = await Promise.all(
-    input.machineIds.flatMap((machineId) =>
-      PROCESS_KEYS.map((process) =>
-        updateProcess(machineId, process, true, input.updatedBy.trim()),
-      ),
-    ),
-  );
-  const uniqueMachines = new Map(
-    updated
-      .filter(Boolean)
-      .map((machine) => [machine!.id, machine!]),
-  );
-  res.json([...uniqueMachines.values()].map(formatMachine));
+  const updatedMachines = [];
+  for (const machineId of input.machineIds) {
+    let updatedMachine: MachineRow | null = await getMachine(machineId);
+    for (const process of PROCESS_KEYS) {
+      if (!updatedMachine) break;
+      updatedMachine = await updateProcess(
+        machineId,
+        process,
+        true,
+        input.updatedBy.trim(),
+      );
+    }
+    if (updatedMachine) updatedMachines.push(updatedMachine);
+  }
+  res.json(updatedMachines.map(formatMachine));
 });
 
 router.get("/summary", async (_req, res) => {

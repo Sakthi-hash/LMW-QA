@@ -179,6 +179,19 @@ export const UpdateMachineResponse = zod.object({
 
 
 /**
+ * Removes a machine after QA is complete while preserving its activity history.
+ * @summary Delete a ready machine
+ */
+export const DeleteMachineParams = zod.object({
+  "machineId": zod.coerce.number().int()
+})
+
+export const DeleteMachineResponse = zod.object({
+  "deletedId": zod.number().int()
+})
+
+
+/**
  * Marks or unmarks one QA process for a machine.
  * @summary Mark one machine process
  */

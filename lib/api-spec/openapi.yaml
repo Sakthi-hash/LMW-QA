@@ -88,6 +88,28 @@ paths:
                 $ref: "#/components/schemas/Machine"
         "404":
           description: Machine not found
+    delete:
+      operationId: deleteMachine
+      tags: [machines]
+      summary: Delete a ready machine
+      description: Removes a machine after QA is complete while preserving its activity history.
+      parameters:
+        - $ref: "#/components/parameters/MachineId"
+      responses:
+        "200":
+          description: Machine deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MachineDeleteResult"
+        "404":
+          description: Machine not found
+        "409":
+          description: Only ready machines can be deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
   /machines/{machineId}/processes/{process}:
     patch:
       operationId: updateMachineProcess
@@ -269,6 +291,12 @@ components:
         name:
           type: string
           minLength: 1
+    MachineDeleteResult:
+      type: object
+      required: [deletedId]
+      properties:
+        deletedId:
+          type: integer
     ProcessUpdate:
       type: object
       required: [done, updatedBy]

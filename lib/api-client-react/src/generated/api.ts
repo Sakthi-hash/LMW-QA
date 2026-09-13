@@ -26,6 +26,7 @@ import type {
   ErrorResponse,
   HealthStatus,
   Machine,
+  MachineDeleteResult,
   MachineInput,
   MachineSummary,
   MachineUpdate,
@@ -392,6 +393,81 @@ export const useUpdateMachine = <TError = ErrorType<void>,
         TContext
       > => {
       return useMutation(getUpdateMachineMutationOptions(options));
+    }
+
+export const getDeleteMachineUrl = (machineId: number,) => {
+
+
+
+
+  return `/api/machines/${machineId}`
+}
+
+/**
+ * Removes a machine after QA is complete while preserving its activity history.
+ * @summary Delete a ready machine
+ */
+export const deleteMachine = async (machineId: number, options?: Parameters<typeof customFetch>[1]): Promise<MachineDeleteResult> => {
+
+  return customFetch<MachineDeleteResult>(getDeleteMachineUrl(machineId),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteMachineMutationKey = () => ['deleteMachine'] as const;
+
+export const getDeleteMachineMutationOptions = <TError = ErrorType<void | ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMachine>>, TError,DeleteMachineMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMachine>>, TError,DeleteMachineMutationVariables, TContext> => {
+
+const mutationKey = getDeleteMachineMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMachine>>, DeleteMachineMutationVariables> = (props) => {
+          const {machineId} = props ?? {};
+
+          return  deleteMachine(machineId,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMachineMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMachine>>>
+
+    export type DeleteMachineMutationError = ErrorType<void | ErrorResponse>
+    export type DeleteMachineMutationVariables = {machineId: number}
+
+    /**
+ * @summary Delete a ready machine
+ */
+export const useDeleteMachine = <TError = ErrorType<void | ErrorResponse>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMachine>>, TError,DeleteMachineMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMachine>>,
+        TError,
+        DeleteMachineMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteMachineMutationOptions(options));
     }
 
 export const getUpdateMachineProcessUrl = (machineId: number,

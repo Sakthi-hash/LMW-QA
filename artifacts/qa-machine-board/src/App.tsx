@@ -16,6 +16,7 @@ import {
   Search,
   Settings2,
   ShieldCheck,
+  Trash2,
   UserRound,
   X,
   Zap,
@@ -27,6 +28,7 @@ import {
   useBulkCompleteMachines,
   useBulkUpdateProcess,
   useCreateMachine,
+  useDeleteMachine,
   useGetMachineSummary,
   useListMachineActivity,
   useListMachines,
@@ -263,7 +265,7 @@ function ActivityPanel({ activity, loading, error }: { activity?: Activity[]; lo
   );
 }
 
-function MachineModal({ machine, onClose, onSave, pending }: { machine?: Machine; onClose: () => void; onSave: (bedNumber: string, name: string) => void; pending: boolean }) {
+function MachineModal({ machine, onClose, onSave, onDelete, pending, deleting }: { machine?: Machine; onClose: () => void; onSave: (bedNumber: string, name: string) => void; onDelete: () => void; pending: boolean; deleting: boolean }) {
   const [bedNumber, setBedNumber] = useState(machine?.bedNumber ?? '');
   const [name, setName] = useState(machine?.name ?? '');
   const valid = bedNumber.trim().length > 0 && name.trim().length > 0;
@@ -274,7 +276,8 @@ function MachineModal({ machine, onClose, onSave, pending }: { machine?: Machine
         <form onSubmit={(event) => { event.preventDefault(); if (valid) onSave(bedNumber.trim(), name.trim()); }} className="space-y-4">
           <label className="block"><span className="mb-1.5 block text-xs font-bold text-[#53635b]">Bed number</span><input data-testid="input-bed-number" autoFocus value={bedNumber} onChange={(event) => setBedNumber(event.target.value)} placeholder="e.g. 04" className="h-11 w-full rounded-lg border border-[#d8d1c3] bg-[#f7f4ec] px-3 text-sm text-[#29483f] outline-none transition-colors focus:border-[#39866e] focus:ring-2 focus:ring-[#c9e5d9]" /></label>
           <label className="block"><span className="mb-1.5 block text-xs font-bold text-[#53635b]">Machine name</span><input data-testid="input-machine-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Haas VF-2" className="h-11 w-full rounded-lg border border-[#d8d1c3] bg-[#f7f4ec] px-3 text-sm text-[#29483f] outline-none transition-colors focus:border-[#39866e] focus:ring-2 focus:ring-[#c9e5d9]" /></label>
-          <div className="flex gap-2 pt-2"><button type="button" data-testid="button-cancel-machine" onClick={onClose} className="h-11 flex-1 rounded-lg border border-[#d8d1c3] text-sm font-bold text-[#647068] hover:bg-[#f0ece3]">Cancel</button><button type="submit" data-testid="button-save-machine" disabled={!valid || pending} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[#1e765e] text-sm font-bold text-white disabled:opacity-50">{pending && <Loader2 size={15} className="animate-spin" />} {machine ? 'Save changes' : 'Add machine'}</button></div>
+          {machine?.status === 'completed' && <div className="rounded-lg border border-[#ead1cc] bg-[#fcf2ef] p-3 text-xs text-[#8e4d43]"><div className="flex items-start gap-2"><Trash2 size={15} className="mt-0.5 shrink-0" /><p>Ready-to-dispatch machines can be removed from the board. Their QA activity history will remain.</p></div><button type="button" data-testid={`button-delete-machine-${machine.id}`} onClick={onDelete} disabled={pending || deleting} className="mt-3 flex h-9 items-center gap-2 rounded-md border border-[#d99b91] bg-[#fffaf8] px-3 text-xs font-bold text-[#9a453b] hover:bg-[#f9e4df] disabled:opacity-50">{deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Delete ready machine</button></div>}
+          <div className="flex gap-2 pt-2"><button type="button" data-testid="button-cancel-machine" onClick={onClose} className="h-11 flex-1 rounded-lg border border-[#d8d1c3] text-sm font-bold text-[#647068] hover:bg-[#f0ece3]">Cancel</button><button type="submit" data-testid="button-save-machine" disabled={!valid || pending || deleting} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[#1e765e] text-sm font-bold text-white disabled:opacity-50">{pending && <Loader2 size={15} className="animate-spin" />} {machine ? 'Save changes' : 'Add machine'}</button></div>
         </form>
       </div>
     </div>
@@ -297,6 +300,7 @@ function Board() {
   const summaryQuery = useGetMachineSummary({ query: { queryKey: getGetMachineSummaryQueryKey(), refetchInterval: 3000 } });
   const activityQuery = useListMachineActivity({ query: { queryKey: getListMachineActivityQueryKey(), refetchInterval: 3000 } });
   const createMachine = useCreateMachine();
+  const deleteMachine = useDeleteMachine();
   const updateMachine = useUpdateMachine();
   const updateProcess = useUpdateMachineProcess();
   const bulkProcessMutation = useBulkUpdateProcess();
@@ -344,6 +348,16 @@ function Board() {
       createMachine.mutate({ data: { bedNumber, name } }, { onSuccess: () => { invalidateAll(); setModalMachine(undefined); }, onError: (error) => setMutationError(errorText(error)) });
     }
   };
+  const removeMachine = () => {
+    if (!modalMachine || modalMachine.status !== 'completed') return;
+    const confirmed = window.confirm(`Delete ${modalMachine.name} from the board? Its QA activity history will remain.`);
+    if (!confirmed) return;
+    setMutationError(null);
+    deleteMachine.mutate({ machineId: modalMachine.id }, {
+      onSuccess: () => { invalidateAll(); setModalMachine(undefined); },
+      onError: (error) => setMutationError(errorText(error)),
+    });
+  };
   const runBulk = () => {
     if (!person.trim() || selected.length === 0) return;
     setMutationError(null);
@@ -380,7 +394,7 @@ function Board() {
           </>
         )}
       </div>
-      {modalMachine !== undefined && <MachineModal machine={modalMachine ?? undefined} onClose={() => setModalMachine(undefined)} onSave={submitMachine} pending={createMachine.isPending || updateMachine.isPending} />}
+      {modalMachine !== undefined && <MachineModal machine={modalMachine ?? undefined} onClose={() => setModalMachine(undefined)} onSave={submitMachine} onDelete={removeMachine} pending={createMachine.isPending || updateMachine.isPending} deleting={deleteMachine.isPending} />}
     </div>
   );
 }

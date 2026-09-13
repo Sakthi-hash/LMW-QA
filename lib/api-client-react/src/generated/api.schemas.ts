@@ -71,6 +71,10 @@ export interface MachineUpdate {
   name?: string;
 }
 
+export interface MachineDeleteResult {
+  deletedId: number;
+}
+
 export interface ProcessUpdate {
   done: boolean;
   /** @minLength 1 */
