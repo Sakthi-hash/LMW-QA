@@ -401,3 +401,12 @@ export const ListMachineActivityResponseItem = zod.object({
 export const ListMachineActivityResponse = zod.array(ListMachineActivityResponseItem)
 
 
+/**
+ * Deletes all QA activity entries while leaving machine records unchanged.
+ * @summary Clear recent activity
+ */
+export const ClearMachineActivityResponse = zod.object({
+  "clearedCount": zod.number().int()
+})
+
+

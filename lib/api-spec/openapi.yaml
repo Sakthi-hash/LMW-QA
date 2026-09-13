@@ -204,6 +204,18 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Activity"
+    delete:
+      operationId: clearMachineActivity
+      tags: [machines]
+      summary: Clear recent activity
+      description: Deletes all QA activity entries while leaving machine records unchanged.
+      responses:
+        "200":
+          description: Activity cleared
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActivityClearResult"
 components:
   parameters:
     MachineId:
@@ -382,6 +394,12 @@ components:
           type: string
         updatedAt:
           type: string
+    ActivityClearResult:
+      type: object
+      required: [clearedCount]
+      properties:
+        clearedCount:
+          type: integer
     ErrorResponse:
       type: object
       required: [error]

@@ -7,6 +7,7 @@
  */
 
 export * from './activity';
+export * from './activityClearResult';
 export * from './bulkCompleteInput';
 export * from './bulkProcessInput';
 export * from './errorResponse';

@@ -27,6 +27,7 @@ import {
   getListMachinesQueryKey,
   useBulkCompleteMachines,
   useBulkUpdateProcess,
+  useClearMachineActivity,
   useCreateMachine,
   useDeleteMachine,
   useGetMachineSummary,
@@ -240,12 +241,15 @@ function MachineCard({ machine, selected, onSelect, person, onToggle, onEdit, on
   );
 }
 
-function ActivityPanel({ activity, loading, error }: { activity?: Activity[]; loading: boolean; error?: unknown }) {
+function ActivityPanel({ activity, loading, error, onClear, clearing }: { activity?: Activity[]; loading: boolean; error?: unknown; onClear: () => void; clearing: boolean }) {
   return (
     <aside className="rounded-xl border border-[#ded8ca] bg-[#fbfaf5] shadow-[0_2px_12px_rgba(48,53,42,.04)]" data-testid="activity-panel">
       <div className="flex items-center justify-between border-b border-[#e7e1d5] px-4 py-3.5">
         <div className="flex items-center gap-2"><History size={16} className="text-[#2e7963]" /><h2 className="font-['Space_Grotesk'] text-sm font-bold text-[#2b4841]">Recent activity</h2></div>
-        <span className="rounded-full bg-[#edf3ed] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#40816d]">Live</span>
+        <div className="flex items-center gap-2">
+          {activity && activity.length > 0 && <button type="button" data-testid="button-clear-history" onClick={onClear} disabled={clearing} className="flex items-center gap-1 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#9a5b51] transition-colors hover:bg-[#f9e7e2] disabled:opacity-50">{clearing ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />} Clear history</button>}
+          <span className="rounded-full bg-[#edf3ed] px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[#40816d]">Live</span>
+        </div>
       </div>
       <div className="max-h-[430px] overflow-auto p-2">
         {loading && <div className="space-y-3 p-3">{[1, 2, 3, 4].map((i) => <div key={i} className="h-11 animate-pulse rounded-lg bg-[#efebe2]" />)}</div>}
@@ -299,6 +303,7 @@ function Board() {
   const machinesQuery = useListMachines({ query: { queryKey: getListMachinesQueryKey(), refetchInterval: 3000 } });
   const summaryQuery = useGetMachineSummary({ query: { queryKey: getGetMachineSummaryQueryKey(), refetchInterval: 3000 } });
   const activityQuery = useListMachineActivity({ query: { queryKey: getListMachineActivityQueryKey(), refetchInterval: 3000 } });
+  const clearActivity = useClearMachineActivity();
   const createMachine = useCreateMachine();
   const deleteMachine = useDeleteMachine();
   const updateMachine = useUpdateMachine();
@@ -368,6 +373,15 @@ function Board() {
     setMutationError(null);
     bulkComplete.mutate({ data: { machineIds: selected, updatedBy: person.trim() } }, { onSuccess: () => { invalidateAll(); setSelected([]); }, onError: (error) => setMutationError(errorText(error)) });
   };
+  const clearHistory = () => {
+    if (!activityQuery.data?.length) return;
+    const confirmed = window.confirm('Clear all recent QA activity history? This cannot be undone.');
+    if (!confirmed) return;
+    clearActivity.mutate(undefined, {
+      onSuccess: () => { void queryClient.invalidateQueries({ queryKey: getListMachineActivityQueryKey() }); },
+      onError: (error) => setMutationError(errorText(error)),
+    });
+  };
 
   const isLoading = machinesQuery.isLoading;
   const isError = machinesQuery.isError;
@@ -390,7 +404,7 @@ function Board() {
             </div>
             {selected.length > 0 && <div className="mb-5 flex flex-col gap-3 rounded-xl border border-[#b8dccc] bg-[#e5f2ec] p-3 sm:flex-row sm:items-center sm:justify-between" data-testid="bulk-toolbar"><div className="flex items-center gap-2 text-sm font-bold text-[#245d4d]"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2c8066] text-xs text-white">{selected.length}</span> {selected.length === 1 ? 'machine' : 'machines'} selected</div><div className="flex flex-wrap items-center gap-2"><select data-testid="select-bulk-process" value={bulkProcess} onChange={(event) => setBulkProcess(event.target.value as Process)} className="h-9 rounded-md border border-[#b7d4c6] bg-[#f7fbf8] px-2 text-xs font-semibold text-[#2b6454] outline-none">{PROCESS_ORDER.map((process) => <option key={process} value={process}>{PROCESS_META[process].label}</option>)}</select><button type="button" data-testid="button-bulk-process" onClick={runBulk} disabled={bulkProcessMutation.isPending || !person.trim()} className="h-9 rounded-md bg-[#2d8067] px-3 text-xs font-bold text-white disabled:opacity-50">{bulkProcessMutation.isPending ? 'Updating…' : 'Mark process done'}</button><button type="button" data-testid="button-bulk-complete" onClick={runBulkComplete} disabled={bulkComplete.isPending || !person.trim()} className="flex h-9 items-center gap-1 rounded-md border border-[#b7d4c6] bg-[#f7fbf8] px-3 text-xs font-bold text-[#2d725d] disabled:opacity-50"><CheckCheck size={14} /> Complete all</button><button type="button" data-testid="button-clear-selection" onClick={() => setSelected([])} className="rounded-md p-2 text-[#69917f] hover:bg-[#d5e9df]"><X size={15} /></button></div></div>}
             {visibleMachines.length === 0 ? <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#d5cfc2] bg-[#fbfaf5] text-center" data-testid="empty-machines"><div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e4eee8] text-[#39826a]"><ClipboardCheck size={27} /></div><h2 className="font-['Space_Grotesk'] text-xl font-bold text-[#344e46]">{machines.length === 0 ? 'Your board is clear' : 'No machines match'}</h2><p className="mt-1 max-w-sm text-sm text-[#828a82]">{machines.length === 0 ? 'Add the first bed to start the shift. Every check-off will be visible to the whole team.' : 'Try a different search or status filter.'}</p>{machines.length === 0 ? <button type="button" data-testid="button-empty-add-machine" onClick={() => setModalMachine(null)} className="mt-5 flex items-center gap-2 rounded-lg bg-[#1e765e] px-4 py-2.5 text-sm font-bold text-white"><Plus size={16} /> Add first machine</button> : <button type="button" data-testid="button-reset-filters" onClick={() => { setSearch(''); setFilter('all'); }} className="mt-5 text-sm font-bold text-[#26755f] hover:underline">Reset filters</button>}</div> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleMachines.map((machine, index) => <div key={machine.id} style={{ animationDelay: `${index * 35}ms` }}><MachineCard machine={machine} selected={selected.includes(machine.id)} onSelect={(checked) => setSelected((current) => checked ? [...current, machine.id] : current.filter((id) => id !== machine.id))} person={person} onToggle={(process, done) => mutateProcess(machine, process, done)} onEdit={() => setModalMachine(machine)} onComplete={() => completeMachine(machine)} pendingKey={pendingKey} /></div>)}</div>}
-            <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"><div className="hidden rounded-xl border border-[#ded8ca] bg-[#fbfaf5] p-4 lg:block"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.14em] text-[#78837b]"><CircleHelp size={14} className="text-[#b3832d]" /> Quick reference</div><div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs text-[#768078]">{PROCESS_ORDER.map((process) => <span key={process} className="flex items-center gap-1.5"><span className="font-['DM_Mono'] text-[10px] font-bold text-[#437763]">{PROCESS_META[process].short}</span>{PROCESS_META[process].label}</span>)}</div></div><ActivityPanel activity={activityQuery.data} loading={activityQuery.isLoading} error={activityQuery.error} /></div>
+            <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"><div className="hidden rounded-xl border border-[#ded8ca] bg-[#fbfaf5] p-4 lg:block"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.14em] text-[#78837b]"><CircleHelp size={14} className="text-[#b3832d]" /> Quick reference</div><div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs text-[#768078]">{PROCESS_ORDER.map((process) => <span key={process} className="flex items-center gap-1.5"><span className="font-['DM_Mono'] text-[10px] font-bold text-[#437763]">{PROCESS_META[process].short}</span>{PROCESS_META[process].label}</span>)}</div></div><ActivityPanel activity={activityQuery.data} loading={activityQuery.isLoading} error={activityQuery.error} onClear={clearHistory} clearing={clearActivity.isPending} /></div>
           </>
         )}
       </div>

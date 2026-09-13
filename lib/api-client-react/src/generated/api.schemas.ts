@@ -125,6 +125,10 @@ export interface Activity {
   updatedAt: string;
 }
 
+export interface ActivityClearResult {
+  clearedCount: number;
+}
+
 export interface ErrorResponse {
   error: string;
 }

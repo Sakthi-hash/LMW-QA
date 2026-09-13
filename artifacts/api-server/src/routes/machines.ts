@@ -293,4 +293,11 @@ router.get("/activity", async (_req, res) => {
   );
 });
 
+router.delete("/activity", async (_req, res) => {
+  const deleted = await db
+    .delete(activityTable)
+    .returning({ id: activityTable.id });
+  res.json({ clearedCount: deleted.length });
+});
+
 export default router;

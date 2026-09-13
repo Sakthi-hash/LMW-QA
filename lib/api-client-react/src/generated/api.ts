@@ -21,6 +21,7 @@ import type {
 
 import type {
   Activity,
+  ActivityClearResult,
   BulkCompleteInput,
   BulkProcessInput,
   ErrorResponse,
@@ -895,4 +896,79 @@ export function useListMachineActivity<TData = Awaited<ReturnType<typeof listMac
 
 
 
+
+export const getClearMachineActivityUrl = () => {
+
+
+
+
+  return `/api/activity`
+}
+
+/**
+ * Deletes all QA activity entries while leaving machine records unchanged.
+ * @summary Clear recent activity
+ */
+export const clearMachineActivity = async ( options?: Parameters<typeof customFetch>[1]): Promise<ActivityClearResult> => {
+
+  return customFetch<ActivityClearResult>(getClearMachineActivityUrl(),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getClearMachineActivityMutationKey = () => ['clearMachineActivity'] as const;
+
+export const getClearMachineActivityMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearMachineActivity>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof clearMachineActivity>>, TError,void, TContext> => {
+
+const mutationKey = getClearMachineActivityMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof clearMachineActivity>>, void> = () => {
+
+
+          return  clearMachineActivity(requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type ClearMachineActivityMutationResult = NonNullable<Awaited<ReturnType<typeof clearMachineActivity>>>
+
+    export type ClearMachineActivityMutationError = ErrorType<unknown>
+
+
+    /**
+ * @summary Clear recent activity
+ */
+export const useClearMachineActivity = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof clearMachineActivity>>, TError,void, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof clearMachineActivity>>,
+        TError,
+        void,
+        TContext
+      > => {
+      return useMutation(getClearMachineActivityMutationOptions(options));
+    }
 
