@@ -1,7 +1,6 @@
 {
-  "framework": "vite",
   "buildCommand": "npx pnpm run build",
-  "outputDirectory": "artifacts/qa-machine-board/dist/public",
+  "outputDirectory": "public",
   "rewrites": [
     {
       "source": "/api/(.*)",

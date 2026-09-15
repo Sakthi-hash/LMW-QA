@@ -6,7 +6,7 @@
   "scripts": {
     "dev:api": "pnpm --filter @workspace/api-server run dev",
     "dev:web": "pnpm --filter @workspace/qa-machine-board run dev",
-    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "build": "pnpm run typecheck && pnpm -r --if-present run build && node -e \"const fs = require('fs'); fs.cpSync('artifacts/qa-machine-board/dist/public', 'public', { recursive: true });\"",
     "db:push": "pnpm --filter @workspace/db run push",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
