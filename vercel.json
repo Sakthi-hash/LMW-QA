@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "framework": "vite",
   "buildCommand": "npx pnpm run build",
   "outputDirectory": "artifacts/qa-machine-board/dist/public",
   "rewrites": [
@@ -8,8 +8,8 @@
       "destination": "/api"
     },
     {
-      "source": "/(.*)",
-      "destination": "/$1"
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ]
 }
