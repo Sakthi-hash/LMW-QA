@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm --filter @workspace/qa-machine-board run build && node -e \"require('fs').cpSync('artifacts/qa-machine-board/dist/public', 'public', {recursive: true, force: true})\"",
+  "buildCommand": "pnpm --filter @workspace/qa-machine-board run build",
   "outputDirectory": "public",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": null,
