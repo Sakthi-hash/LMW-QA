@@ -29,6 +29,36 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+import path from "path";
+import fs from "fs";
+
 app.use("/api", router);
 
+// Serve frontend static assets if built, or fallback to API status route
+const frontendDist = path.resolve(import.meta.dirname, "../../qa-machine-board/dist/public");
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.use((req, res, next) => {
+    if (req.method === "GET" && !req.path.startsWith("/api")) {
+      return res.sendFile(path.join(frontendDist, "index.html"));
+    }
+    next();
+  });
+} else {
+  app.get("/", (_req, res) => {
+    res.json({
+      status: "online",
+      message: "QA Machine Board API Server is running",
+      frontendDevUrl: "http://localhost:3000",
+      apiEndpoints: {
+        machines: "/api/machines",
+        summary: "/api/summary",
+        activity: "/api/activity",
+      },
+    });
+  });
+}
+
+
 export default app;
+

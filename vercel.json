@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "buildCommand": "npx pnpm run build",
+  "outputDirectory": "artifacts/qa-machine-board/dist/public",
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
+  ]
+}

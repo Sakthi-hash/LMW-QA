@@ -1,23 +1,7 @@
-import { ReplitConnectors, type ProxyOptions } from "@replit/connectors-sdk";
 import type { MachineRow } from "@workspace/db";
 
-const SPREADSHEET_ID = "1qESJ_m_TXZEO3PQItIL4KKYpUObsDFL0kGyTLJXU7Jg";
-const SHEET_NAME = "Sheet1";
-const SHEET_ROWS = 1000;
-const DATA_START_ROW = 2;
-
-function rangePath(range: string) {
-  return encodeURIComponent(range);
-}
-
-async function sheetsRequest(path: string, init?: ProxyOptions) {
-  const response = await new ReplitConnectors().proxy("google-sheet", path, init);
-  if (!response.ok) {
-    const detail = await response.text();
-    throw new Error(`Google Sheets request failed (${response.status}): ${detail.slice(0, 240)}`);
-  }
-  return response;
-}
+const SPREADSHEET_ID = process.env.GOOGLE_SPREADSHEET_ID || "1qESJ_m_TXZEO3PQItIL4KKYpUObsDFL0kGyTLJXU7Jg";
+const SHEET_NAME = process.env.GOOGLE_SHEET_NAME || "Sheet1";
 
 function formatDate(date: Date) {
   return date.toISOString().slice(0, 10);
@@ -39,42 +23,66 @@ function machineRow(machine: MachineRow) {
   ];
 }
 
+/**
+ * Sync machines to Google Sheets.
+ * Supports:
+ * 1. GOOGLE_SHEETS_WEBHOOK_URL (Google Apps Script Web App Endpoint)
+ * 2. GOOGLE_SHEETS_API_KEY / Access Token
+ */
 export async function syncMachinesToSheet(machines: MachineRow[]) {
-  const valuesRange = `${SHEET_NAME}!A${DATA_START_ROW}:K${SHEET_ROWS}`;
-  const readResponse = await sheetsRequest(
-    `/v4/spreadsheets/${SPREADSHEET_ID}/values/${rangePath(valuesRange)}?valueRenderOption=FORMATTED_VALUE`,
-  );
-  const existing = (await readResponse.json()) as { values?: string[][] };
-  const existingRows = existing.values ?? [];
-  let lastUsedRow = DATA_START_ROW - 1;
-  existingRows.forEach((row, index) => {
-    if (row.some((cell) => String(cell ?? "").trim().length > 0)) {
-      lastUsedRow = DATA_START_ROW + index;
-    }
-  });
-
-  const clearEndRow = Math.max(lastUsedRow, DATA_START_ROW + machines.length - 1);
-  await sheetsRequest(
-    `/v4/spreadsheets/${SPREADSHEET_ID}/values/${rangePath(`${SHEET_NAME}!A${DATA_START_ROW}:K${Math.max(clearEndRow, DATA_START_ROW)}`)}:clear`,
-    {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: "{}",
-    },
-  );
-
-  if (machines.length === 0) return;
+  const webhookUrl = process.env.GOOGLE_SHEETS_WEBHOOK_URL;
+  const apiKey = process.env.GOOGLE_SHEETS_API_KEY;
+  const accessToken = process.env.GOOGLE_ACCESS_TOKEN;
 
   const rows = [...machines]
     .sort((left, right) => left.id - right.id)
     .map(machineRow);
-  const writeRange = `${SHEET_NAME}!A${DATA_START_ROW}:K${DATA_START_ROW + rows.length - 1}`;
-  await sheetsRequest(
-    `/v4/spreadsheets/${SPREADSHEET_ID}/values/${rangePath(writeRange)}?valueInputOption=USER_ENTERED`,
-    {
-      method: "PUT",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ majorDimension: "ROWS", values: rows }),
-    },
-  );
+
+  // Method 1: Google Apps Script Webhook (Recommended for easy setup)
+  if (webhookUrl) {
+    try {
+      const response = await fetch(webhookUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          spreadsheetId: SPREADSHEET_ID,
+          sheetName: SHEET_NAME,
+          machines: rows,
+        }),
+      });
+      if (!response.ok) {
+        console.warn(`Google Sheets Webhook sync status: ${response.status}`);
+      } else {
+        console.log("Instant Google Sheets sync complete via Webhook!");
+      }
+    } catch (err) {
+      console.warn("Google Sheets Webhook sync error:", err);
+    }
+    return;
+  }
+
+  // Method 2: Google Sheets API v4 with Bearer Access Token / API Key
+  if (accessToken || apiKey) {
+    try {
+      const range = `${SHEET_NAME}!A2:K${Math.max(100, 1 + rows.length)}`;
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED${apiKey ? `&key=${apiKey}` : ""}`;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
+
+      const response = await fetch(url, {
+        method: "PUT",
+        headers,
+        body: JSON.stringify({ majorDimension: "ROWS", values: rows }),
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        console.warn(`Google Sheets API sync failed (${response.status}): ${text.slice(0, 200)}`);
+      } else {
+        console.log("Instant Google Sheets sync complete via Google Sheets API!");
+      }
+    } catch (err) {
+      console.warn("Google Sheets API sync error:", err);
+    }
+    return;
+  }
 }

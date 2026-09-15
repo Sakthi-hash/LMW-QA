@@ -270,7 +270,7 @@ function ActivityPanel({ activity, loading, error, onClear, clearing }: { activi
   );
 }
 
-const PUBLISHED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQt-yLlq7FspGYw2S7DWTiR6b5Wm_euUNpoQoMYjWIhsf_Gtc2u7PykscoE_kftUnWOrVlxJZUVKQYV/pubhtml?gid=0&single=true&widget=true&headers=false';
+const PUBLISHED_SHEET_URL = import.meta.env.VITE_EMBEDDED_SHEET_URL || 'https://docs.google.com/spreadsheets/d/1qESJ_m_TXZEO3PQItIL4KKYpUObsDFL0kGyTLJXU7Jg/htmlembed?widget=true&headers=false';
 
 function SheetPanel() {
   return (
