@@ -1,26 +1,21 @@
 {
-  "version": 2,
-  "builds": [
+  "buildCommand": "pnpm --filter @workspace/qa-machine-board run build",
+  "outputDirectory": "artifacts/qa-machine-board/dist/public",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "framework": null,
+  "rewrites": [
     {
-      "src": "api/index.ts",
-      "use": "@vercel/node"
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
     },
     {
-      "src": "artifacts/qa-machine-board/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist/public"
-      }
+      "source": "/((?!api/).*)",
+      "destination": "/index.html"
     }
   ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.ts"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/artifacts/qa-machine-board/$1"
+  "functions": {
+    "api/index.ts": {
+      "runtime": "nodejs22.x"
     }
-  ]
+  }
 }
