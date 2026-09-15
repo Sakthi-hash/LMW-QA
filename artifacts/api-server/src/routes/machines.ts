@@ -10,9 +10,11 @@ import {
 } from "@workspace/api-zod";
 import { db, activityTable, machinesTable, PROCESS_KEYS, type MachineRow, type ProcessKey, type ProcessMap } from "@workspace/db";
 import { desc, eq } from "drizzle-orm";
+import { syncMachinesToSheet } from "../googleSheets";
 
 const router: IRouter = Router();
 const seedPromise = seedMachines();
+void seedPromise.then(syncCurrentMachines);
 
 function emptyProcesses(): ProcessMap {
   return Object.fromEntries(
@@ -35,6 +37,8 @@ function formatMachine(machine: MachineRow) {
     id: machine.id,
     bedNumber: machine.bedNumber,
     name: machine.name,
+    workNo: machine.workNo,
+    remarks: machine.remarks,
     status: machine.status as "not_started" | "in_progress" | "completed",
     processes: machine.processes,
     createdAt: machine.createdAt.toISOString(),
@@ -62,6 +66,8 @@ async function seedMachines() {
     {
       bedNumber: "BED-2041",
       name: "Atlas CNC",
+      workNo: "WO-2041",
+      remarks: "",
       status: "in_progress",
       processes: {
         ...emptyProcesses(),
@@ -80,12 +86,16 @@ async function seedMachines() {
     {
       bedNumber: "BED-2042",
       name: "Orion CNC",
+      workNo: "WO-2042",
+      remarks: "",
       status: "completed",
       processes: completed,
     },
     {
       bedNumber: "BED-2043",
       name: "Nova CNC",
+      workNo: "WO-2043",
+      remarks: "",
       status: "not_started",
       processes: emptyProcesses(),
     },
@@ -99,6 +109,15 @@ async function getMachine(id: number) {
     .where(eq(machinesTable.id, id))
     .limit(1);
   return rows[0];
+}
+
+async function syncCurrentMachines() {
+  try {
+    const machines = await db.select().from(machinesTable);
+    await syncMachinesToSheet(machines);
+  } catch (error) {
+    console.error("Google Sheets sync failed", error);
+  }
 }
 
 async function updateProcess(
@@ -158,10 +177,13 @@ router.post("/machines", async (req, res) => {
     .values({
       bedNumber: input.bedNumber.trim(),
       name: input.name.trim(),
+      workNo: input.workNo?.trim() ?? "",
+      remarks: input.remarks?.trim() ?? "",
       status: "not_started",
       processes: emptyProcesses(),
     })
     .returning();
+  await syncCurrentMachines();
   res.status(201).json(formatMachine(machine));
 });
 
@@ -179,10 +201,13 @@ router.patch("/machines/:machineId", async (req, res) => {
     .set({
       ...(input.bedNumber ? { bedNumber: input.bedNumber.trim() } : {}),
       ...(input.name ? { name: input.name.trim() } : {}),
+      ...(input.workNo !== undefined ? { workNo: input.workNo.trim() } : {}),
+      ...(input.remarks !== undefined ? { remarks: input.remarks.trim() } : {}),
       updatedAt: new Date(),
     })
     .where(eq(machinesTable.id, machineId))
     .returning();
+  await syncCurrentMachines();
   res.json(formatMachine(updated));
 });
 
@@ -201,6 +226,7 @@ router.delete("/machines/:machineId", async (req, res) => {
   }
 
   await db.delete(machinesTable).where(eq(machinesTable.id, machineId));
+  await syncCurrentMachines();
   res.json({ deletedId: machineId });
 });
 
@@ -217,6 +243,7 @@ router.patch("/machines/:machineId/processes/:process", async (req, res) => {
     res.status(404).json({ error: "Machine not found" });
     return;
   }
+  await syncCurrentMachines();
   res.json(formatMachine(updated));
 });
 
@@ -232,6 +259,7 @@ router.post("/machines/bulk-process", async (req, res) => {
       ),
     ),
   );
+  await syncCurrentMachines();
   res.json(updated.filter(Boolean).map(formatMachine));
 });
 
@@ -251,6 +279,7 @@ router.post("/machines/bulk-complete", async (req, res) => {
     }
     if (updatedMachine) updatedMachines.push(updatedMachine);
   }
+  await syncCurrentMachines();
   res.json(updatedMachines.map(formatMachine));
 });
 

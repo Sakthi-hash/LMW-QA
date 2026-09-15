@@ -199,6 +199,7 @@ function MachineCard({ machine, selected, onSelect, person, onToggle, onEdit, on
               <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
             </div>
             <h2 className="mt-1 truncate font-['Space_Grotesk'] text-lg font-bold tracking-[-.03em] text-[#27443c]" data-testid={`text-machine-name-${machine.id}`}>{machine.name}</h2>
+             <p className="mt-0.5 truncate text-[11px] text-[#8b938b]">Work {machine.workNo || '—'}</p>
           </div>
         </div>
         <button type="button" data-testid={`button-edit-machine-${machine.id}`} onClick={onEdit} className="rounded-md p-1.5 text-[#9ba099] transition-colors hover:bg-[#efebe1] hover:text-[#2c6655]" title="Edit machine"><Settings2 size={16} /></button>
@@ -269,17 +270,35 @@ function ActivityPanel({ activity, loading, error, onClear, clearing }: { activi
   );
 }
 
-function MachineModal({ machine, onClose, onSave, onDelete, pending, deleting }: { machine?: Machine; onClose: () => void; onSave: (bedNumber: string, name: string) => void; onDelete: () => void; pending: boolean; deleting: boolean }) {
+const PUBLISHED_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQt-yLlq7FspGYw2S7DWTiR6b5Wm_euUNpoQoMYjWIhsf_Gtc2u7PykscoE_kftUnWOrVlxJZUVKQYV/pubhtml?gid=0&single=true&widget=true&headers=false';
+
+function SheetPanel() {
+  return (
+    <section className="mt-7 overflow-hidden rounded-xl border border-[#ded8ca] bg-[#fbfaf5] shadow-[0_2px_12px_rgba(48,53,42,.04)]" data-testid="sheet-panel">
+      <div className="flex flex-col gap-3 border-b border-[#e7e1d5] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between">
+        <div><div className="flex items-center gap-2"><ClipboardCheck size={16} className="text-[#2e7963]" /><h2 className="font-['Space_Grotesk'] text-sm font-bold text-[#2b4841]">Printable sheet view</h2></div><p className="mt-1 text-xs text-[#7f887f]">The dashboard rows sync to the Google Sheet automatically.</p></div>
+        <a href={PUBLISHED_SHEET_URL} target="_blank" rel="noreferrer" className="flex h-9 items-center justify-center rounded-md border border-[#b7d4c6] bg-[#f7fbf8] px-3 text-xs font-bold text-[#2d725d] hover:bg-[#e8f3ed]">Open printable sheet</a>
+      </div>
+      <iframe title="Machine QA printable Google Sheet" src={PUBLISHED_SHEET_URL} className="h-[480px] w-full bg-white" loading="lazy" />
+    </section>
+  );
+}
+
+function MachineModal({ machine, onClose, onSave, onDelete, pending, deleting }: { machine?: Machine; onClose: () => void; onSave: (bedNumber: string, name: string, workNo: string, remarks: string) => void; onDelete: () => void; pending: boolean; deleting: boolean }) {
   const [bedNumber, setBedNumber] = useState(machine?.bedNumber ?? '');
   const [name, setName] = useState(machine?.name ?? '');
+  const [workNo, setWorkNo] = useState(machine?.workNo ?? '');
+  const [remarks, setRemarks] = useState(machine?.remarks ?? '');
   const valid = bedNumber.trim().length > 0 && name.trim().length > 0;
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-[#1e302d]/35 p-4 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-labelledby="machine-modal-title">
       <div className="w-full max-w-md rounded-2xl border border-[#d8d1c3] bg-[#fbfaf5] p-6 shadow-[0_24px_70px_rgba(27,48,42,.22)]">
         <div className="mb-5 flex items-start justify-between"><div><p className="text-[10px] font-bold uppercase tracking-[.18em] text-[#347b65]">{machine ? 'Machine details' : 'New machine'}</p><h2 id="machine-modal-title" className="mt-1 font-['Space_Grotesk'] text-2xl font-bold tracking-[-.04em] text-[#24443b]">{machine ? 'Edit machine' : 'Add to the board'}</h2></div><button type="button" data-testid="button-close-machine-modal" onClick={onClose} className="rounded-lg p-1.5 text-[#8e958d] hover:bg-[#efebe1] hover:text-[#334e46]"><X size={18} /></button></div>
-        <form onSubmit={(event) => { event.preventDefault(); if (valid) onSave(bedNumber.trim(), name.trim()); }} className="space-y-4">
+         <form onSubmit={(event) => { event.preventDefault(); if (valid) onSave(bedNumber.trim(), name.trim(), workNo.trim(), remarks.trim()); }} className="space-y-4">
           <label className="block"><span className="mb-1.5 block text-xs font-bold text-[#53635b]">Bed number</span><input data-testid="input-bed-number" autoFocus value={bedNumber} onChange={(event) => setBedNumber(event.target.value)} placeholder="e.g. 04" className="h-11 w-full rounded-lg border border-[#d8d1c3] bg-[#f7f4ec] px-3 text-sm text-[#29483f] outline-none transition-colors focus:border-[#39866e] focus:ring-2 focus:ring-[#c9e5d9]" /></label>
           <label className="block"><span className="mb-1.5 block text-xs font-bold text-[#53635b]">Machine name</span><input data-testid="input-machine-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Haas VF-2" className="h-11 w-full rounded-lg border border-[#d8d1c3] bg-[#f7f4ec] px-3 text-sm text-[#29483f] outline-none transition-colors focus:border-[#39866e] focus:ring-2 focus:ring-[#c9e5d9]" /></label>
+           <div className="grid gap-4 sm:grid-cols-2"><label className="block"><span className="mb-1.5 block text-xs font-bold text-[#53635b]">Work number</span><input data-testid="input-work-number" value={workNo} onChange={(event) => setWorkNo(event.target.value)} placeholder="e.g. WO-2044" className="h-11 w-full rounded-lg border border-[#d8d1c3] bg-[#f7f4ec] px-3 text-sm text-[#29483f] outline-none transition-colors focus:border-[#39866e] focus:ring-2 focus:ring-[#c9e5d9]" /></label><label className="block"><span className="mb-1.5 block text-xs font-bold text-[#53635b]">Remarks</span><input data-testid="input-machine-remarks" value={remarks} onChange={(event) => setRemarks(event.target.value)} placeholder="Optional note" className="h-11 w-full rounded-lg border border-[#d8d1c3] bg-[#f7f4ec] px-3 text-sm text-[#29483f] outline-none transition-colors focus:border-[#39866e] focus:ring-2 focus:ring-[#c9e5d9]" /></label></div>
+           <p className="-mt-1 text-[11px] text-[#8b938b]">Date is added automatically when the machine is created.</p>
           {machine?.status === 'completed' && <div className="rounded-lg border border-[#ead1cc] bg-[#fcf2ef] p-3 text-xs text-[#8e4d43]"><div className="flex items-start gap-2"><Trash2 size={15} className="mt-0.5 shrink-0" /><p>Ready-to-dispatch machines can be removed from the board. Their QA activity history will remain.</p></div><button type="button" data-testid={`button-delete-machine-${machine.id}`} onClick={onDelete} disabled={pending || deleting} className="mt-3 flex h-9 items-center gap-2 rounded-md border border-[#d99b91] bg-[#fffaf8] px-3 text-xs font-bold text-[#9a453b] hover:bg-[#f9e4df] disabled:opacity-50">{deleting ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />} Delete ready machine</button></div>}
           <div className="flex gap-2 pt-2"><button type="button" data-testid="button-cancel-machine" onClick={onClose} className="h-11 flex-1 rounded-lg border border-[#d8d1c3] text-sm font-bold text-[#647068] hover:bg-[#f0ece3]">Cancel</button><button type="submit" data-testid="button-save-machine" disabled={!valid || pending || deleting} className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-[#1e765e] text-sm font-bold text-white disabled:opacity-50">{pending && <Loader2 size={15} className="animate-spin" />} {machine ? 'Save changes' : 'Add machine'}</button></div>
         </form>
@@ -320,7 +339,7 @@ function Board() {
   const visibleMachines = useMemo(() => machines.filter((machine) => {
     const matchesFilter = filter === 'all' || machine.status === filter;
     const query = search.trim().toLowerCase();
-    return matchesFilter && (!query || machine.name.toLowerCase().includes(query) || machine.bedNumber.toLowerCase().includes(query));
+    return matchesFilter && (!query || machine.name.toLowerCase().includes(query) || machine.bedNumber.toLowerCase().includes(query) || machine.workNo.toLowerCase().includes(query));
   }), [machines, filter, search]);
 
   useEffect(() => {
@@ -345,12 +364,12 @@ function Board() {
       onError: (error) => { setPendingKey(null); setMutationError(errorText(error)); },
     });
   };
-  const submitMachine = (bedNumber: string, name: string) => {
+  const submitMachine = (bedNumber: string, name: string, workNo: string, remarks: string) => {
     setMutationError(null);
     if (modalMachine) {
-      updateMachine.mutate({ machineId: modalMachine.id, data: { bedNumber, name } }, { onSuccess: () => { invalidateAll(); setModalMachine(undefined); }, onError: (error) => setMutationError(errorText(error)) });
+      updateMachine.mutate({ machineId: modalMachine.id, data: { bedNumber, name, workNo, remarks } }, { onSuccess: () => { invalidateAll(); setModalMachine(undefined); }, onError: (error) => setMutationError(errorText(error)) });
     } else {
-      createMachine.mutate({ data: { bedNumber, name } }, { onSuccess: () => { invalidateAll(); setModalMachine(undefined); }, onError: (error) => setMutationError(errorText(error)) });
+      createMachine.mutate({ data: { bedNumber, name, workNo, remarks } }, { onSuccess: () => { invalidateAll(); setModalMachine(undefined); }, onError: (error) => setMutationError(errorText(error)) });
     }
   };
   const removeMachine = () => {
@@ -404,7 +423,8 @@ function Board() {
             </div>
             {selected.length > 0 && <div className="mb-5 flex flex-col gap-3 rounded-xl border border-[#b8dccc] bg-[#e5f2ec] p-3 sm:flex-row sm:items-center sm:justify-between" data-testid="bulk-toolbar"><div className="flex items-center gap-2 text-sm font-bold text-[#245d4d]"><span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2c8066] text-xs text-white">{selected.length}</span> {selected.length === 1 ? 'machine' : 'machines'} selected</div><div className="flex flex-wrap items-center gap-2"><select data-testid="select-bulk-process" value={bulkProcess} onChange={(event) => setBulkProcess(event.target.value as Process)} className="h-9 rounded-md border border-[#b7d4c6] bg-[#f7fbf8] px-2 text-xs font-semibold text-[#2b6454] outline-none">{PROCESS_ORDER.map((process) => <option key={process} value={process}>{PROCESS_META[process].label}</option>)}</select><button type="button" data-testid="button-bulk-process" onClick={runBulk} disabled={bulkProcessMutation.isPending || !person.trim()} className="h-9 rounded-md bg-[#2d8067] px-3 text-xs font-bold text-white disabled:opacity-50">{bulkProcessMutation.isPending ? 'Updating…' : 'Mark process done'}</button><button type="button" data-testid="button-bulk-complete" onClick={runBulkComplete} disabled={bulkComplete.isPending || !person.trim()} className="flex h-9 items-center gap-1 rounded-md border border-[#b7d4c6] bg-[#f7fbf8] px-3 text-xs font-bold text-[#2d725d] disabled:opacity-50"><CheckCheck size={14} /> Complete all</button><button type="button" data-testid="button-clear-selection" onClick={() => setSelected([])} className="rounded-md p-2 text-[#69917f] hover:bg-[#d5e9df]"><X size={15} /></button></div></div>}
             {visibleMachines.length === 0 ? <div className="flex min-h-[360px] flex-col items-center justify-center rounded-2xl border border-dashed border-[#d5cfc2] bg-[#fbfaf5] text-center" data-testid="empty-machines"><div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#e4eee8] text-[#39826a]"><ClipboardCheck size={27} /></div><h2 className="font-['Space_Grotesk'] text-xl font-bold text-[#344e46]">{machines.length === 0 ? 'Your board is clear' : 'No machines match'}</h2><p className="mt-1 max-w-sm text-sm text-[#828a82]">{machines.length === 0 ? 'Add the first bed to start the shift. Every check-off will be visible to the whole team.' : 'Try a different search or status filter.'}</p>{machines.length === 0 ? <button type="button" data-testid="button-empty-add-machine" onClick={() => setModalMachine(null)} className="mt-5 flex items-center gap-2 rounded-lg bg-[#1e765e] px-4 py-2.5 text-sm font-bold text-white"><Plus size={16} /> Add first machine</button> : <button type="button" data-testid="button-reset-filters" onClick={() => { setSearch(''); setFilter('all'); }} className="mt-5 text-sm font-bold text-[#26755f] hover:underline">Reset filters</button>}</div> : <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visibleMachines.map((machine, index) => <div key={machine.id} style={{ animationDelay: `${index * 35}ms` }}><MachineCard machine={machine} selected={selected.includes(machine.id)} onSelect={(checked) => setSelected((current) => checked ? [...current, machine.id] : current.filter((id) => id !== machine.id))} person={person} onToggle={(process, done) => mutateProcess(machine, process, done)} onEdit={() => setModalMachine(machine)} onComplete={() => completeMachine(machine)} pendingKey={pendingKey} /></div>)}</div>}
-            <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"><div className="hidden rounded-xl border border-[#ded8ca] bg-[#fbfaf5] p-4 lg:block"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.14em] text-[#78837b]"><CircleHelp size={14} className="text-[#b3832d]" /> Quick reference</div><div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs text-[#768078]">{PROCESS_ORDER.map((process) => <span key={process} className="flex items-center gap-1.5"><span className="font-['DM_Mono'] text-[10px] font-bold text-[#437763]">{PROCESS_META[process].short}</span>{PROCESS_META[process].label}</span>)}</div></div><ActivityPanel activity={activityQuery.data} loading={activityQuery.isLoading} error={activityQuery.error} onClear={clearHistory} clearing={clearActivity.isPending} /></div>
+             <div className="mt-7 grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]"><div className="hidden rounded-xl border border-[#ded8ca] bg-[#fbfaf5] p-4 lg:block"><div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[.14em] text-[#78837b]"><CircleHelp size={14} className="text-[#b3832d]" /> Quick reference</div><div className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-xs text-[#768078]">{PROCESS_ORDER.map((process) => <span key={process} className="flex items-center gap-1.5"><span className="font-['DM_Mono'] text-[10px] font-bold text-[#437763]">{PROCESS_META[process].short}</span>{PROCESS_META[process].label}</span>)}</div></div><ActivityPanel activity={activityQuery.data} loading={activityQuery.isLoading} error={activityQuery.error} onClear={clearHistory} clearing={clearActivity.isPending} /></div>
+             <SheetPanel />
           </>
         )}
       </div>

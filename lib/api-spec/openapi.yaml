@@ -253,13 +253,17 @@ components:
           type: ["string", "null"]
     Machine:
       type: object
-      required: [id, bedNumber, name, status, processes, createdAt, updatedAt]
+      required: [id, bedNumber, name, workNo, remarks, status, processes, createdAt, updatedAt]
       properties:
         id:
           type: integer
         bedNumber:
           type: string
         name:
+          type: string
+        workNo:
+          type: string
+        remarks:
           type: string
         status:
           type: string
@@ -294,6 +298,10 @@ components:
         name:
           type: string
           minLength: 1
+        workNo:
+          type: string
+        remarks:
+          type: string
     MachineUpdate:
       type: object
       properties:
@@ -303,6 +311,10 @@ components:
         name:
           type: string
           minLength: 1
+        workNo:
+          type: string
+        remarks:
+          type: string
     MachineDeleteResult:
       type: object
       required: [deletedId]

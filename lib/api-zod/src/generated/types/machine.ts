@@ -12,6 +12,8 @@ export interface Machine {
   id: number;
   bedNumber: string;
   name: string;
+  workNo: string;
+  remarks: string;
   status: MachineStatus;
   processes: MachineProcesses;
   createdAt: string;

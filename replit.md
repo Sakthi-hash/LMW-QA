@@ -16,6 +16,7 @@ Shared live QA tracking for CNC machines moving through six readiness checks bef
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - API: Express 5
 - DB: PostgreSQL + Drizzle ORM
+- External sync: Google Sheets connector
 - Validation: Zod (`zod/v4`), `drizzle-zod`
 - API codegen: Orval (from OpenAPI spec)
 - Build: esbuild (CJS bundle)
@@ -33,10 +34,11 @@ Shared live QA tracking for CNC machines moving through six readiness checks bef
 - Machine readiness is derived from the six process states: zero done is Not started, partial is In progress, and all six done is Completed / Ready to dispatch.
 - The board uses short polling with generated React Query hooks so all open sessions converge on the shared PostgreSQL state without a separate realtime service.
 - Each process update stores the operator name and timestamp, and also creates an activity entry for traceability.
+- The board syncs machine rows to the connected `Machine_QA_Data` Google Sheet `Sheet1`: Date, Machine Name, Bed NO, Work No, Rlb, Laser, LKC, FUC, CT, TAG, Remarks. The app database is the source of truth and the sheet is the printable view.
 
 ## Product
 
-QA members, supervisors, and department heads can add or edit machines, mark Reliability, Laser, LKC, FUC, CT, and TAG individually, select several machines for bulk updates, and see which machines are ready for dispatch.
+QA members, supervisors, and department heads can add or edit machines, including Work No and Remarks, mark Reliability, Laser, LKC, FUC, CT, and TAG individually, select several machines for bulk updates, and see which machines are ready for dispatch.
 
 ## User preferences
 
@@ -46,6 +48,7 @@ QA members, supervisors, and department heads can add or edit machines, mark Rel
 
 - A person's name is required before process or bulk actions can be submitted; it is stored in the browser for the next visit.
 - Regenerate API hooks with `pnpm --filter @workspace/api-spec run codegen` after changing `lib/api-spec/openapi.yaml`.
+- Google Sheets syncing is server-side through the Replit connector; do not put spreadsheet credentials in browser code.
 
 ## Pointers
 

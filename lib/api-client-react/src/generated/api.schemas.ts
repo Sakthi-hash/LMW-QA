@@ -51,6 +51,8 @@ export interface Machine {
   id: number;
   bedNumber: string;
   name: string;
+  workNo: string;
+  remarks: string;
   status: MachineStatus;
   processes: MachineProcesses;
   createdAt: string;
@@ -62,6 +64,8 @@ export interface MachineInput {
   bedNumber: string;
   /** @minLength 1 */
   name: string;
+  workNo?: string;
+  remarks?: string;
 }
 
 export interface MachineUpdate {
@@ -69,6 +73,8 @@ export interface MachineUpdate {
   bedNumber?: string;
   /** @minLength 1 */
   name?: string;
+  workNo?: string;
+  remarks?: string;
 }
 
 export interface MachineDeleteResult {

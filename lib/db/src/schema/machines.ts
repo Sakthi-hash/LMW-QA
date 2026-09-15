@@ -23,6 +23,8 @@ export const machinesTable = pgTable("machines", {
   id: serial("id").primaryKey(),
   bedNumber: varchar("bed_number", { length: 80 }).notNull(),
   name: varchar("name", { length: 160 }).notNull(),
+  workNo: varchar("work_no", { length: 80 }).notNull().default(""),
+  remarks: varchar("remarks", { length: 500 }).notNull().default(""),
   status: varchar("status", { length: 24 }).notNull().default("not_started"),
   processes: jsonb("processes").$type<ProcessMap>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),

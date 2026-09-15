@@ -11,4 +11,6 @@ export interface MachineUpdate {
   bedNumber?: string;
   /** @minLength 1 */
   name?: string;
+  workNo?: string;
+  remarks?: string;
 }

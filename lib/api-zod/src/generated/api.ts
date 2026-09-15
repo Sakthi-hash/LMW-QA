@@ -25,6 +25,8 @@ export const ListMachinesResponseItem = zod.object({
   "id": zod.number().int(),
   "bedNumber": zod.string(),
   "name": zod.string(),
+  "workNo": zod.string(),
+  "remarks": zod.string(),
   "status": zod.enum(['not_started', 'in_progress', 'completed']),
   "processes": zod.object({
   "reliability": zod.object({
@@ -74,13 +76,17 @@ export const ListMachinesResponse = zod.array(ListMachinesResponseItem)
 
 export const CreateMachineBody = zod.object({
   "bedNumber": zod.string().min(1),
-  "name": zod.string().min(1)
+  "name": zod.string().min(1),
+  "workNo": zod.string().optional(),
+  "remarks": zod.string().optional()
 })
 
 export const CreateMachineResponse = zod.object({
   "id": zod.number().int(),
   "bedNumber": zod.string(),
   "name": zod.string(),
+  "workNo": zod.string(),
+  "remarks": zod.string(),
   "status": zod.enum(['not_started', 'in_progress', 'completed']),
   "processes": zod.object({
   "reliability": zod.object({
@@ -133,13 +139,17 @@ export const UpdateMachineParams = zod.object({
 
 export const UpdateMachineBody = zod.object({
   "bedNumber": zod.string().min(1).optional(),
-  "name": zod.string().min(1).optional()
+  "name": zod.string().min(1).optional(),
+  "workNo": zod.string().optional(),
+  "remarks": zod.string().optional()
 })
 
 export const UpdateMachineResponse = zod.object({
   "id": zod.number().int(),
   "bedNumber": zod.string(),
   "name": zod.string(),
+  "workNo": zod.string(),
+  "remarks": zod.string(),
   "status": zod.enum(['not_started', 'in_progress', 'completed']),
   "processes": zod.object({
   "reliability": zod.object({
@@ -212,6 +222,8 @@ export const UpdateMachineProcessResponse = zod.object({
   "id": zod.number().int(),
   "bedNumber": zod.string(),
   "name": zod.string(),
+  "workNo": zod.string(),
+  "remarks": zod.string(),
   "status": zod.enum(['not_started', 'in_progress', 'completed']),
   "processes": zod.object({
   "reliability": zod.object({
@@ -269,6 +281,8 @@ export const BulkUpdateProcessResponseItem = zod.object({
   "id": zod.number().int(),
   "bedNumber": zod.string(),
   "name": zod.string(),
+  "workNo": zod.string(),
+  "remarks": zod.string(),
   "status": zod.enum(['not_started', 'in_progress', 'completed']),
   "processes": zod.object({
   "reliability": zod.object({
@@ -325,6 +339,8 @@ export const BulkCompleteMachinesResponseItem = zod.object({
   "id": zod.number().int(),
   "bedNumber": zod.string(),
   "name": zod.string(),
+  "workNo": zod.string(),
+  "remarks": zod.string(),
   "status": zod.enum(['not_started', 'in_progress', 'completed']),
   "processes": zod.object({
   "reliability": zod.object({

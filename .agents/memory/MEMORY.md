@@ -1,2 +1,3 @@
 - [Generated client DOM types](api-client-dom-iterable.md) — keep `dom.iterable` enabled for `Headers.entries()` in generated API clients.
 - [Bulk completion ordering](bulk-completion-race.md) — serialize process writes for one machine so JSON state updates do not overwrite each other.
+- [Google Sheet printable sync](google-sheet-sync.md) — treat the connected sheet as a stable, server-written print projection of the QA database.
