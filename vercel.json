@@ -2,7 +2,6 @@
   "buildCommand": "pnpm --filter @workspace/qa-machine-board run build",
   "outputDirectory": "public",
   "installCommand": "pnpm install --frozen-lockfile",
-  "framework": null,
   "rewrites": [
     {
       "source": "/api/:path*",
@@ -12,10 +11,5 @@
       "source": "/:path*",
       "destination": "/"
     }
-  ],
-  "functions": {
-    "api/index.ts": {
-      "maxDuration": 30
-    }
-  }
+  ]
 }
