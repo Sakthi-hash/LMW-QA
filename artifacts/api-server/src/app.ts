@@ -34,8 +34,13 @@ import fs from "fs";
 
 app.use("/api", router);
 
-// Serve frontend static assets if built, or fallback to API status route
-const frontendDist = path.resolve(import.meta.dirname, "../../qa-machine-board/dist/public");
+// Serve frontend static assets:
+// - On Vercel: VERCEL=1 is auto-set, Vite outputs to root public/
+// - Locally: serve from the local dist/public build output
+const frontendDist = process.env.VERCEL
+  ? path.resolve(process.cwd(), "public")
+  : path.resolve(import.meta.dirname, "../../qa-machine-board/dist/public");
+
 if (fs.existsSync(frontendDist)) {
   app.use(express.static(frontendDist));
   app.use((req, res, next) => {
