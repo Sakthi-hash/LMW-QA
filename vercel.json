@@ -1,12 +1,8 @@
 {
   "buildCommand": "pnpm --filter @workspace/qa-machine-board run build",
+  "outputDirectory": "dist",
   "installCommand": "pnpm install --frozen-lockfile",
-  "functions": {
-    "api/index.ts": {
-      "includeFiles": "public/**"
-    }
-  },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api/index.ts" }
+    { "source": "/(.*)", "destination": "/" }
   ]
 }
