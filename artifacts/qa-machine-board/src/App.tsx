@@ -46,7 +46,17 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
 import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      throwOnError: false,
+    },
+    mutations: {
+      throwOnError: false,
+    },
+  },
+});
 const PROCESS_ORDER: Process[] = ['reliability', 'laser', 'lkc', 'fuc', 'ct', 'tag'];
 const PROCESS_META: Record<Process, { label: string; short: string }> = {
   reliability: { label: 'Reliability', short: 'REL' },
@@ -335,7 +345,7 @@ function Board() {
     void queryClient.invalidateQueries({ queryKey: getGetMachineSummaryQueryKey() });
     void queryClient.invalidateQueries({ queryKey: getListMachineActivityQueryKey() });
   };
-  const machines = machinesQuery.data ?? [];
+  const machines = Array.isArray(machinesQuery.data) ? machinesQuery.data : [];
   const visibleMachines = useMemo(() => machines.filter((machine) => {
     const matchesFilter = filter === 'all' || machine.status === filter;
     const query = search.trim().toLowerCase();
