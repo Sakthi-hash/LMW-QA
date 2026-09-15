@@ -1,5 +1,8 @@
 {
   "buildCommand": "pnpm --filter @workspace/qa-machine-board run build",
   "outputDirectory": "dist",
-  "installCommand": "pnpm install --frozen-lockfile"
+  "installCommand": "pnpm install --frozen-lockfile",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
